@@ -1,4 +1,4 @@
-package sokoban.models;
+package transportservice.models;
 
 public class ListGrid {
     private int numbRows;

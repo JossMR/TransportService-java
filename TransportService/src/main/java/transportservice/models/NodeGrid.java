@@ -1,4 +1,4 @@
-package sokoban.models;
+package transportservice.models;
 
 public class NodeGrid {
     private NodeGrid up;
