@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane minHeight="700.0" minWidth="1100.0" stylesheets="@../css/StyleSokoban.css" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sokoban.Controllers.victoryController">
+   <children>
+      <ImageView fitHeight="700.0" fitWidth="1100.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <image>
+            <Image url="@../images/fondoPlaya.png" />
+         </image>
+      </ImageView>
+      <BorderPane minHeight="600.0" minWidth="900.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <center>
+            <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" spacing="50.0" BorderPane.alignment="CENTER">
+               <children>
+                  <Button fx:id="nextButton" onAction="#onActionNextLevel" text="Siguiente" />
+                  <Button fx:id="repetitionButton" onAction="#onActionReplay" text="Repetición" />
+                  <Button fx:id="levelSelectionButton" mnemonicParsing="false" onAction="#onActionSelectLevel" text="Seleccionar Nivel" />
+                  <Button fx:id="returnMenuButton" mnemonicParsing="false" onAction="#onActionReturnMenu" text="Volver al Menu" />
+                  <Button fx:id="quitButton" mnemonicParsing="false" onAction="#onActionQuit" text="Salir" />
+               </children>
+            </VBox>
+         </center>
+         <top>
+            <Label alignment="CENTER" text="¡Victoria!" BorderPane.alignment="CENTER">
+               <font>
+                  <Font size="72.0" />
+               </font>
+            </Label>
+         </top>
+      </BorderPane>
+   </children>
+</AnchorPane>

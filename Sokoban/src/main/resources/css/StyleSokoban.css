@@ -1,0 +1,55 @@
+@font-face {
+    font-family: 'Starborn';
+    src: url('Starborn.ttf');
+}
+.root {
+    -fx-font-family: 'Starborn';   
+}
+.label{
+    -fx-font-family: 'Starborn';
+    -fx-text-fill: #ffc44d;
+    -fx-font-size: 64px;
+}
+.game-pane{
+    -fx-background-color:  #52decb;
+}
+.button {
+    -fx-font-family: 'Starborn';
+    -fx-font-size: 15px;
+    -fx-background-color: linear-gradient(to bottom, #5926ff, #680c96);
+    -fx-background-radius: 5;
+    -fx-padding: 10;
+    -fx-text-fill: yellow;
+    -fx-alignment: center;
+
+}
+.button:hover{
+ -fx-background-color: #5899ed;
+
+}
+.button:pressed{
+    -fx-background-color:#0b2d4a;
+    -fx-scale-x: 0.95;
+    -fx-scale-y: 0.95;
+    -fx-translate-x: 2px;
+    -fx-translate-y: 2px;
+}
+.level-button {
+    -fx-background-color: linear-gradient(to bottom, #32aaf0, #145bde);
+    -fx-background-radius: 5;
+    -fx-padding: 10;
+    -fx-text-fill: white;
+    -fx-alignment: center;
+}
+
+.level-button:hover {
+    -fx-background-color: #78d2de;
+}
+
+.level-button:pressed {
+    -fx-background-color: #225075;
+    -fx-scale-x: 0.95;
+    -fx-scale-y: 0.95;
+    -fx-translate-x: 2px;
+    -fx-translate-y: 2px;
+}
