@@ -63,12 +63,12 @@ public class gameController implements Initializable{
         }else if(onReplay){
                 gameEngine.reproduceReplay();
             }else {
-                FileTextReader.deleteWinnedLevel();
-                if(mainMenuController.continueFromSave){
-                    gameEngine.loadSavedLevel();
-                }else{
-                    gameEngine.loadSelectedLevel(levelSelectMenuController.lvlSelected);
-                }
+//                FileTextReader.deleteWinnedLevel();
+//                if(mainMenuController.continueFromSave){
+//                    gameEngine.loadSavedLevel();
+//                }else{
+//                    gameEngine.loadSelectedLevel(levelSelectMenuController.lvlSelected);
+//                }
             }
         }
 }
