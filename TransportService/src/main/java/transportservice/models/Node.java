@@ -2,6 +2,7 @@ package transportservice.models;
 
 import javafx.scene.control.Button;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Node {
@@ -9,13 +10,14 @@ public class Node {
     private Button button;
     private int x;
     private int y;
+    private List<String> adjacencies;
 
     public Node(Button button, String name, int x, int y) {
         this.name = name;
         this.x = x;
         this.y = y;
         this.button = button;
-        List<String> adjacencies;
+        adjacencies = new ArrayList<>();
     }
 
     public String getName() {
@@ -40,5 +42,13 @@ public class Node {
 
     public void setY(int y) {
         this.y = y;
+    }
+
+    public List<String> getAdjacencies() {
+        return this.adjacencies;
+    }
+
+    public Button getButton() {
+        return button;
     }
 }

@@ -1,55 +1,63 @@
 package transportservice.Controllers;
 
-import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.ResourceBundle;
+import java.util.*;
+
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.geometry.Insets;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelReader;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import transportservice.App;
-import transportservice.models.FileTextReader;
-import transportservice.models.ListGrid;
 import transportservice.models.Node;
-
-import javax.swing.*;
+import transportservice.models.data;
+import transportservice.util.*;
 
 public class mainMenuController implements Initializable{
     @FXML
-    Button A;
-    @FXML
-    private ChoiceBox<String> choiceBoxtest;
-    @FXML
     private ImageView map;
     @FXML
-    private Pane pane;
+    private Pane buttonsPane;
+    @FXML
+    private Pane rutePane;
+    @FXML
+    private Pane conditionsPane;
+    @FXML
+    private Pane roadsPane;
     @FXML
     private ChoiceBox<String> choiceBoxCondition;
     @FXML
-    private ChoiceBox<String> choiceBoxDirection;
+    private ChoiceBox<String> choiceBoxTraficLevel;
     @FXML
     private ChoiceBox<String> choiceBoxNode1;
     @FXML
     private ChoiceBox<String> choiceBoxNode2;
+    @FXML
+    private ChoiceBox<String> choiceBoxAlgorithms;
+    @FXML
+    private Label labelNodeEnd;
+    @FXML
+    private Label labelNodeStart;
+
     List<Node> nodes = new ArrayList<>();
     Canvas canvas = new Canvas(700, 850);
     GraphicsContext gc = canvas.getGraphicsContext2D();
+    Canvas canvasConditions = new Canvas(700, 850);
+    GraphicsContext gcConditions = canvasConditions.getGraphicsContext2D();
+    Canvas canvasRoads = new Canvas(700, 850);
+    GraphicsContext gcRoads = canvasRoads.getGraphicsContext2D();
+    private double[][] weights;
+    private int[][] conditions;//1 Calle cerrada, 2 Accidentes, 3 trafico nivel 1, 4 trafico nivel 2, 5 trafico nivel 3
+    private int[][] startWay;
 
     @FXML
     void quitOnAction(ActionEvent event) {
@@ -58,19 +66,290 @@ public class mainMenuController implements Initializable{
     @FXML
     void onActionAddCondition(ActionEvent event) {
         if(choiceBoxNode1.getSelectionModel().isEmpty() || choiceBoxNode2.getSelectionModel().isEmpty()){
-            return;
-        }else{
-            Node node1 = nodes.get(choiceBoxNode1.getSelectionModel().getSelectedIndex());
-            Node node2 = nodes.get(choiceBoxNode2.getSelectionModel().getSelectedIndex());
-            gc.setStroke(Color.RED); // Cambia el color según lo necesites
-            gc.setLineWidth(3); // Opcional: cambiar el grosor de la línea
-            gc.strokeLine(node1.getX(), node1.getY(), node2.getX(), node2.getY());
+            new Message().showModal(Alert.AlertType.ERROR,"Error creando condición",labelNodeEnd.getScene().getWindow(),"Debe elegir nodo de inicio y de final para agregar la condición");
+        } else if (this.choiceBoxCondition.getSelectionModel().isEmpty()) {
+            new Message().showModal(Alert.AlertType.ERROR,"Error creando condición",labelNodeEnd.getScene().getWindow(),"Debe elegir nodo debe de elegir una condición");
+        } else if (this.choiceBoxCondition.getSelectionModel().getSelectedIndex()==2 && this.choiceBoxTraficLevel.getSelectionModel().isEmpty()) {
+            new Message().showModal(Alert.AlertType.ERROR,"Error creando condición",labelNodeEnd.getScene().getWindow(),"Para agregar una condición de trafico debe elegir un nivel para el mismo");
+        } else{
+            Node node1 = null; Node node2 = null;
+            int posNode1 = -1;
+            int posNode2 = -1;
+            for (int i = 0 ; i < nodes.size(); i++) {
+                Node node = nodes.get(i);
+                if (node.getName().equals(choiceBoxNode1.getSelectionModel().getSelectedItem())) {
+                    node1 = node;
+                    posNode1 = i;
+                }
+                if (node.getName().equals(choiceBoxNode2.getSelectionModel().getSelectedItem())) {
+                    node2 = node;
+                    posNode2 = i;
+                }
+            }
+            int condition = -1;
+            switch(this.choiceBoxCondition.getSelectionModel().getSelectedIndex()){
+                case 0:
+                    condition = 1;
+                    break;
+                case 1:
+                    condition = 2;
+                    break;
+                case 2:
+                    switch (this.choiceBoxTraficLevel.getSelectionModel().getSelectedIndex()){
+                        case 0:
+                            condition = 3;
+                            break;
+                        case 1:
+                            condition = 4;
+                            break;
+                        case 2:
+                            condition = 5;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+            if (condition != -1 && posNode1 != -1 && posNode2 != -1) {
+                conditions[posNode1][posNode2] = condition;
+            }
+            drawConditions();
         }
+    }
+
+    @FXML
+    void onActionCalculateRute(ActionEvent event) {
+
+    }
+
+    @FXML
+    void onActionDeleteNodeEnd(ActionEvent event) {
+        int indexOfSelected = -1;
+        for (int i =0 ; i < nodes.size() ; i++){
+            if (nodes.get(i).getName().equals(this.labelNodeEnd.getText())){
+                indexOfSelected = i;
+                break;
+            }
+        }
+        if (indexOfSelected != -1){
+            nodes.get(indexOfSelected).getButton().setStyle("-fx-font-size: 9 ; -fx-background-color: black ; -fx-text-fill: white ");
+            this.labelNodeEnd.setText("");
+            gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+        }
+    }
+
+    @FXML
+    void onActionDeleteNodeStart(ActionEvent event) {
+        int indexOfSelected = -1;
+        for (int i =0 ; i < nodes.size() ; i++){
+            if (nodes.get(i).getName().equals(this.labelNodeStart.getText())){
+                indexOfSelected = i;
+                break;
+            }
+        }
+        if (indexOfSelected != -1) {
+            nodes.get(indexOfSelected).getButton().setStyle("-fx-font-size: 9 ; -fx-background-color: black ; -fx-text-fill: white ");
+            this.labelNodeStart.setText("");
+            gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+        }
+    }
+
+    @FXML
+    void onActionNextStep(ActionEvent event) {
+
+    }
+
+    void handleChoiceBoxNode1Selection(ActionEvent event) {
+        String selected = this.choiceBoxNode1.getSelectionModel().getSelectedItem();
+        Node node1Selected = null;
+        if(!selected.isEmpty()){
+            System.out.println("Elemento seleccionado: " + selected);
+            for (Node node : nodes){
+                if (node.getName().equals(selected)){
+                    node1Selected = node;
+                }
+            }
+            if (node1Selected != null){
+                this.choiceBoxNode2.getItems().clear();
+                node1Selected.getAdjacencies().stream().forEach(s->this.choiceBoxNode2.getItems().add(s));
+            }
+        }else {
+
+        }
+    }
+
+    void assignStartAndFinish(String name){
+        int indexOfSelected = -1;
+        for (int i =0 ; i < nodes.size() ; i++){
+            if (nodes.get(i).getName().equals(name)){
+                indexOfSelected = i;
+                break;
+            }
+        }
+        if (labelNodeStart.getText().isEmpty()){
+            labelNodeStart.setText(name);
+            nodes.get(indexOfSelected).getButton().setStyle("-fx-font-size: 9 ; -fx-background-color:#006f73 ; -fx-text-fill: #000000");
+        } else if (labelNodeEnd.getText().isEmpty()) {
+            labelNodeEnd.setText(name);
+            nodes.get(indexOfSelected).getButton().setStyle("-fx-font-size: 9 ; -fx-background-color:#15c618 ; -fx-text-fill: #000000");
+        } else {
+            new Message().showModal(Alert.AlertType.ERROR,"Error Asignando Nodo",labelNodeEnd.getScene().getWindow(),"Debe eliminar un nodo antes de asignar otro");
+        }
+        if(!this.labelNodeStart.getText().isEmpty() && !this.labelNodeEnd.getText().isEmpty()){
+            if(this.choiceBoxAlgorithms.getSelectionModel().getSelectedItem().equals("Dijkstra")){
+                cleanStartWay();
+                System.out.println(calculateAndDrawDijkstra(labelNodeStart.getText(), labelNodeEnd.getText()));
+                drawStartWay();
+            }else{
+                cleanStartWay();
+                System.out.println(calculateAndDrawFloydWarshall(labelNodeStart.getText(), labelNodeEnd.getText()));
+                drawStartWay();
+            }
+        }
+    }
+
+    private double calculateAndDrawDijkstra(String node1, String node2) {
+        int indexNode1 = -1;
+        int indexNode2 = -1;
+
+        // Obtener los índices de los nodos en la lista
+        for (int i = 0; i < nodes.size(); i++) {
+            if (nodes.get(i).getName().equals(node1)) {
+                indexNode1 = i;
+            }
+            if (nodes.get(i).getName().equals(node2)) {
+                indexNode2 = i;
+            }
+        }
+
+        if (indexNode1 == -1 || indexNode2 == -1) {
+            System.out.println("Nodos no encontrados.");
+            return -1;
+        }
+
+        int n = nodes.size();
+        double[] dist = new double[n];
+        int[] prev = new int[n];
+        boolean[] visited = new boolean[n];
+        Arrays.fill(dist, Double.MAX_VALUE);
+        Arrays.fill(prev, -1);
+        dist[indexNode1] = 0;
+
+        PriorityQueue<Integer> pq = new PriorityQueue<>(Comparator.comparingDouble(i -> dist[i]));
+        pq.add(indexNode1);
+
+        while (!pq.isEmpty()) {
+            int u = pq.poll();
+            visited[u] = true;
+
+            for (int v = 0; v < n; v++) {
+                if (data.adjacent[u][v] == 1 && !visited[v]) {
+                    double alt = dist[u] + weights[u][v];
+                    if (alt < dist[v]) {
+                        dist[v] = alt;
+                        prev[v] = u;
+                        pq.add(v);
+                    }
+                }
+            }
+        }
+
+        // Reconstruir la ruta más corta
+        List<Node> path = new ArrayList<>();
+        for (int at = indexNode2; at != -1; at = prev[at]) {
+            path.add(nodes.get(at));
+        }
+        Collections.reverse(path);
+
+        // Dibujar la ruta usando paintEdge y calcular el peso total
+        double totalWeight = 0;
+        for (int i = 0; i < path.size() - 1; i++) {
+            Node n1 = path.get(i);
+            Node n2 = path.get(i + 1);
+            startWay[nodes.indexOf(n1)][nodes.indexOf(n2)] = 1;
+            totalWeight += weights[nodes.indexOf(n1)][nodes.indexOf(n2)];
+            //paintEdge(n1, n2, Color.BLUE, 2); // Cambia el color y grosor según sea necesario
+        }
+        return totalWeight;
+    }
+
+    private double calculateAndDrawFloydWarshall(String node1, String node2) {
+        int indexNode1 = -1;
+        int indexNode2 = -1;
+
+        // Obtener los índices de los nodos en la lista
+        for (int i = 0; i < nodes.size(); i++) {
+            if (nodes.get(i).getName().equals(node1)) {
+                indexNode1 = i;
+            }
+            if (nodes.get(i).getName().equals(node2)) {
+                indexNode2 = i;
+            }
+        }
+
+        if (indexNode1 == -1 || indexNode2 == -1) {
+            System.out.println("Nodos no encontrados.");
+            return -1;
+        }
+
+        int n = nodes.size();
+        double[][] dist = new double[n][n];
+        int[][] next = new int[n][n];
+
+        // Inicialización de distancias y predecesores
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (i == j) {
+                    dist[i][j] = 0;
+                } else if (data.adjacent[i][j] == 1) {
+                    dist[i][j] = weights[i][j];
+                    next[i][j] = j;
+                } else {
+                    dist[i][j] = Double.MAX_VALUE;
+                    next[i][j] = -1;
+                }
+            }
+        }
+
+        // Aplicación del algoritmo de Floyd-Warshall
+        for (int k = 0; k < n; k++) {
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    if (dist[i][k] != Double.MAX_VALUE && dist[k][j] != Double.MAX_VALUE && dist[i][k] + dist[k][j] < dist[i][j]) {
+                        dist[i][j] = dist[i][k] + dist[k][j];
+                        next[i][j] = next[i][k];
+                    }
+                }
+            }
+        }
+
+        // Reconstrucción de la ruta más corta entre indexNode1 y indexNode2
+        List<Node> path = new ArrayList<>();
+        int at = indexNode1;
+        while (at != -1 && at != indexNode2) {
+            path.add(nodes.get(at));
+            at = next[at][indexNode2];
+        }
+        if (at != -1) {
+            path.add(nodes.get(indexNode2));
+        }
+
+        // Dibujar la ruta y calcular el peso total
+        double totalWeight = dist[indexNode1][indexNode2];
+        for (int i = 0; i < path.size() - 1; i++) {
+            Node n1 = path.get(i);
+            Node n2 = path.get(i + 1);
+            startWay[nodes.indexOf(n1)][nodes.indexOf(n2)] = 1;
+//            paintEdge(path.get(i), path.get(i + 1), Color.BLUE, 2); // Cambia el color y grosor según sea necesario
+        }
+
+        return totalWeight;
     }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        A.setMaxHeight(5);
         Image image = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/mapa.PNG")));
         map .setImage(image);
         PixelReader pixelReader = map.getImage().getPixelReader();
@@ -93,7 +372,8 @@ public class mainMenuController implements Initializable{
                     button.setMinHeight(22);
                     button.setMinWidth(22);
                     nodes.add(new Node(button, button.getText(), x, y));
-                    pane.getChildren().add(button);
+                    button.setOnAction(event -> assignStartAndFinish(button.getText()));
+                    buttonsPane.getChildren().add(button);
                     if(cantNodos < 9){
                         cantNodos++;
                     }else{
@@ -103,40 +383,80 @@ public class mainMenuController implements Initializable{
                 }
             }
         }
+        for (int i = 0 ; i < nodes.size() ; i++) {
+            for (int j = 0 ; j < nodes.size() ; j++) {
+                if(data.adjacent[i][j] == 1){
+                    nodes.get(i).getAdjacencies().add(nodes.get(j).getName());
+                }
+            }
+        }
+        for (int i = 0; i < nodes.size(); i++) {
+            System.out.print(nodes.get(i).getName());
+            nodes.get(i).getAdjacencies().stream().forEach(ad-> System.out.print(" "+ad + " "));
+            System.out.println("\n");
+        }
         calculateEdges();
-        pane.getChildren().add(canvas);
+        rutePane.getChildren().add(canvas);
+        conditionsPane.getChildren().add(canvasConditions);
+        roadsPane.getChildren().add(canvasRoads);
         for (Node node : nodes) {
             choiceBoxNode1.getItems().add(node.getName());
-            choiceBoxNode2.getItems().add(node.getName());
         }
+        calculateWeights();
+        choiceBoxAlgorithms.getItems().addAll("Dijkstra","Floyd");
+        choiceBoxAlgorithms.getSelectionModel().select(0);
+        this.conditions = new int[nodes.size()][nodes.size()];
+        this.startWay = new int[nodes.size()][nodes.size()];
+        this.choiceBoxNode1.setOnAction(this::handleChoiceBoxNode1Selection);
+        this.choiceBoxCondition.getItems().addAll("Cerrada","Accidentes","Trafico");
+        this.choiceBoxCondition.setOnAction(this::handleChoiceBoxCondition);
+        this.choiceBoxTraficLevel.getItems().addAll("1","2","3");
+        this.choiceBoxTraficLevel.setDisable(true);
+        this.drawRoads();
+    }
 
-        this.choiceBoxtest.getItems().addAll(" ","  ","   ");
-        choiceBoxtest.getSelectionModel().selectedIndexProperty().addListener((observable, oldValue, newValue) -> {
-            int selectedIndex = newValue.intValue();
-            System.out.println(selectedIndex);
-            switch (selectedIndex) {
-                case 0:
-                    choiceBoxtest.setStyle("-fx-background-color: red;");
-                    break;
-                case 1:
-                    choiceBoxtest.setStyle("-fx-background-color: green;");
-                    break;
-                case 2:
-                    choiceBoxtest.setStyle("-fx-background-color: blue;");
-                    break;
-                default:
-                    choiceBoxtest.setStyle("-fx-background-color: white;");
-                    break;
+    private void handleChoiceBoxCondition(ActionEvent actionEvent) {
+        int indeXSelected = this.choiceBoxCondition.getSelectionModel().getSelectedIndex();
+        if ( indeXSelected != -1) {
+            this.choiceBoxTraficLevel.setDisable(indeXSelected != 2);
+        }
+    }
+
+    private void calculateWeights() {
+        this.weights = new double[nodes.size()][nodes.size()];
+        for (int i = 0; i < nodes.size(); i++) {
+            for (int j = 0; j < nodes.size(); j++) {
+                if(data.adjacent[i][j] == 1 ){
+                    double x1 = nodes.get(i).getX(), y1 = nodes.get(i).getY();
+                    double x2 = nodes.get(j).getX(), y2 = nodes.get(j).getY();
+                    double value = (double) Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                    this.weights[i][j] = value;
+                    //System.out.println("Distancia entre : "+ nodes.get(i).getName() + " y "+ nodes.get(j).getName()+ " = " + value);
+                }
             }
-        });
+        }
     }
 
     private void calculateEdges() {
-        for (int i=0; i< nodes.size(); i++) {
-            for (int j=0; j< nodes.size(); j++) {
-                printMid(nodes.get(i), nodes.get(j));
-            }
-        }
+    Color c = Color.RED;
+    int size = nodes.size();
+//        for (int i=0; i< size; i++) {
+//            for (int j=i; j< size; j++) {
+//                printMid(nodes.get(i), nodes.get(j));
+//                if(data.adjacent[i][j] == 1){
+//                    paintEdge(nodes.get(i), nodes.get(j),c,5);
+//                }
+//            }
+//        }
+//        c= Color.BLUE;
+//        for (int i=0; i< size; i++) {
+//            for (int j=i; j< size; j++) {
+//                printMid(nodes.get(i), nodes.get(j));
+//                if(data.adjacent[j][i] == 1){
+//                    paintEdge(nodes.get(i), nodes.get(j),c,3);
+//                }
+//            }
+//        }
     }
 
     private void printMid(Node n, Node n1) {
@@ -148,17 +468,205 @@ public class mainMenuController implements Initializable{
         int red = (argb >> 16) & 0xff;
         int green = (argb >> 8) & 0xff;
         int blue = argb & 0xff;
-
 //        if((red == 139 && green == 165 && blue == 193) || (red == 211 && green == 220 && blue == 228)){
 //            paintEdge(n,n1);
 //        }
-        System.out.println("Color en el punto medio (" + n.getName() + ", " + n1.getName() + "): " + "R: " + red + ", G: " + green + ", B: " + blue);
-
+//        System.out.println("Color en el punto medio (" + n.getName() + ", " + n1.getName() + "): " + "R: " + red + ", G: " + green + ", B: " + blue);
     }
-    void paintEdge(Node n1, Node n2){
-        gc.setStroke(Color.BLUE);
-        gc.setLineWidth(3);
+    void paintEdge(Node n1, Node n2,Color c, int lane){
+        gc.setStroke(c);
+        gc.setLineWidth(lane);
         gc.strokeLine(n1.getX(), n1.getY(), n2.getX(), n2.getY());
     }
+    //StartWay Functions
+    private void updateStartWay(){
+        this.cleanStartWay();
+        this.drawStartWay();
+    }
+    private void cleanStartWay(){
+        for (int i = 0; i < nodes.size(); i++) {
+            for (int j = 0; j < nodes.size(); j++) {
+                this.startWay[i][j] = 0;
+            }
+        }
+    }
+    private void drawStartWay(){
+        for (int i = 0; i < nodes.size(); i++) {
+            for (int j = 0; j < nodes.size(); j++) {
+                if(this.startWay[i][j] == 1){
+                    Node n1 = nodes.get(i);
+                    Node n2 = nodes.get(j);
+                    int xN1 = n1.getX();
+                    int yN1 = n1.getY();
+                    int xN2 = n2.getX();
+                    int yN2 = n2.getY();
+                    int gap = 5;
+                    if(n1.getX()<n2.getX() && n1.getY()<n2.getY()){
+                        xN1-=gap;
+                        xN2-=gap;
+                        yN1+=gap;
+                        yN2+=gap;
+                    }else if (n1.getX()>n2.getX() && n1.getY()<n2.getY()){
+                        xN1-=gap;
+                        xN2-=gap;
+                        yN1-=gap;
+                        yN2-=gap;
+                    } else if (n1.getX()>n2.getX() && n1.getY()>n2.getY()) {
+                        xN1+=gap;
+                        xN2+=gap;
+                        yN1-=gap;
+                        yN2-=gap;
+                    }else {
+                        xN1+=gap;
+                        xN2+=gap;
+                        yN1+=gap;
+                        yN2+=gap;
+                    }
+                    gc.setStroke(Color.BLUE);
+                    gc.setLineWidth(3);
+                    gc.strokeLine(xN1,yN1,xN2,yN2);
+                }
+            }
+        }
+    }
 
+    private void drawRoads(){
+        for (int i = 0; i < nodes.size(); i++) {
+            for (int j = i; j < nodes.size(); j++) {
+                if(data.adjacent[i][j] == 1){
+                    Node n1 = nodes.get(i);
+                    Node n2 = nodes.get(j);
+                    int xN1 = n1.getX();
+                    int yN1 = n1.getY();
+                    int xN2 = n2.getX();
+                    int yN2 = n2.getY();
+                    int gap = 5;
+                    if(n1.getX()<n2.getX() && n1.getY()<n2.getY()){
+                        xN1-=gap;
+                        xN2-=gap;
+                        yN1+=gap;
+                        yN2+=gap;
+                    }else if (n1.getX()>n2.getX() && n1.getY()<n2.getY()){
+                        xN1-=gap;
+                        xN2-=gap;
+                        yN1-=gap;
+                        yN2-=gap;
+                    } else if (n1.getX()>n2.getX() && n1.getY()>n2.getY()) {
+                        xN1+=gap;
+                        xN2+=gap;
+                        yN1-=gap;
+                        yN2-=gap;
+                    }else {
+                        xN1+=gap;
+                        xN2+=gap;
+                        yN1+=gap;
+                        yN2+=gap;
+                    }
+                    gcRoads.setStroke(Color.GRAY);
+                    gcRoads.setLineWidth(3);
+                    gcRoads.strokeLine(xN1,yN1,xN2,yN2);
+                }
+            }
+        }
+        for (int i = 0; i < nodes.size(); i++) {
+            for (int j = 0; j < i; j++) {
+                if(data.adjacent[i][j] == 1){
+                    Node n1 = nodes.get(i);
+                    Node n2 = nodes.get(j);
+                    int xN1 = n1.getX();
+                    int yN1 = n1.getY();
+                    int xN2 = n2.getX();
+                    int yN2 = n2.getY();
+                    int gap = 5;
+                    if(n1.getX()<n2.getX() && n1.getY()<n2.getY()){
+                        xN1-=gap;
+                        xN2-=gap;
+                        yN1+=gap;
+                        yN2+=gap;
+                    }else if (n1.getX()>n2.getX() && n1.getY()<n2.getY()){
+                        xN1-=gap;
+                        xN2-=gap;
+                        yN1-=gap;
+                        yN2-=gap;
+                    } else if (n1.getX()>n2.getX() && n1.getY()>n2.getY()) {
+                        xN1+=gap;
+                        xN2+=gap;
+                        yN1-=gap;
+                        yN2-=gap;
+                    }else {
+                        xN1+=gap;
+                        xN2+=gap;
+                        yN1+=gap;
+                        yN2+=gap;
+                    }
+                    gcRoads.setStroke(Color.GRAY);
+                    gcRoads.setLineWidth(3);
+                    gcRoads.strokeLine(xN1,yN1,xN2,yN2);
+                }
+            }
+        }
+    }
+
+    private void drawConditions(){
+        gcConditions.clearRect(0,0,canvasConditions.getWidth(),canvasConditions.getHeight());
+
+        Color c = Color.WHITE;
+        int lineWidth = 0;
+        int gap = 5;
+        for (int i = 0; i < nodes.size(); i++) {
+            for (int j = i; j < nodes.size(); j++) {
+                if(conditions[i][j] != 0){
+                    switch(conditions[i][j]){
+                        case 1:
+                            c = Color.BLACK;
+                            break;
+                        case 2:
+                            c = Color.CYAN;
+                            break;
+                        case 3:
+                            c = Color.DARKGREEN;
+                            break;
+                        case 4:
+                            c = Color.DARKORANGE;
+                            break;
+                        case 5:
+                            c = Color.DARKRED;
+                            break;
+                        default:
+                            break;
+                    }
+                    Node n1 = nodes.get(i);
+                    Node n2 = nodes.get(j);
+                    int xN1 = n1.getX();
+                    int yN1 = n1.getY();
+                    int xN2 = n2.getX();
+                    int yN2 = n2.getY();
+                    if(n1.getX()<n2.getX() && n1.getY()<n2.getY()){
+                        xN1-=gap;
+                        xN2-=gap;
+                        yN1+=gap;
+                        yN2+=gap;
+                    }else if (n1.getX()>n2.getX() && n1.getY()<n2.getY()){
+                        xN1-=gap;
+                        xN2-=gap;
+                        yN1-=gap;
+                        yN2-=gap;
+                    } else if (n1.getX()>n2.getX() && n1.getY()>n2.getY()) {
+                        xN1+=gap;
+                        xN2+=gap;
+                        yN1-=gap;
+                        yN2-=gap;
+                    }else {
+                        xN1+=gap;
+                        xN2+=gap;
+                        yN1+=gap;
+                        yN2+=gap;
+                    }
+                    gcConditions.setStroke(c);
+                    gcConditions.setLineWidth(6);
+                    gcConditions.strokeLine(xN1,yN1,xN2,yN2);
+                }
+            }
+        }
+    }
 }
