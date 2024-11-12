@@ -3,6 +3,8 @@ package transportservice.Controllers;
 import java.net.URL;
 import java.util.*;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -18,6 +20,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelReader;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.util.Duration;
 import transportservice.models.Node;
 import transportservice.models.data;
 import transportservice.util.*;
@@ -47,10 +50,18 @@ public class mainMenuController implements Initializable{
     private Label labelNodeEnd;
     @FXML
     private Label labelNodeStart;
+    @FXML
+    private Label labelStartRute;
+    @FXML
+    private Label labelFinalRute;
+    @FXML
+    private Label labelStartRuteWithConditions;
 
     List<Node> nodes = new ArrayList<>();
     Canvas canvas = new Canvas(700, 850);
     GraphicsContext gc = canvas.getGraphicsContext2D();
+    Canvas canvasFinalWay = new Canvas(700, 850);
+    GraphicsContext gcFinalWay = canvasFinalWay.getGraphicsContext2D();
     Canvas canvasConditions = new Canvas(700, 850);
     GraphicsContext gcConditions = canvasConditions.getGraphicsContext2D();
     Canvas canvasRoads = new Canvas(700, 850);
@@ -58,6 +69,7 @@ public class mainMenuController implements Initializable{
     private double[][] weights;
     private int[][] conditions;//1 Calle cerrada, 2 Accidentes, 3 trafico nivel 1, 4 trafico nivel 2, 5 trafico nivel 3
     private int[][] startWay;
+    private List<Node> startPath;
 
     @FXML
     void quitOnAction(ActionEvent event) {
@@ -113,15 +125,11 @@ public class mainMenuController implements Initializable{
                     break;
             }
             if (condition != -1 && posNode1 != -1 && posNode2 != -1) {
+                System.out.println("Se asigna " + condition);
                 conditions[posNode1][posNode2] = condition;
             }
             drawConditions();
         }
-    }
-
-    @FXML
-    void onActionCalculateRute(ActionEvent event) {
-
     }
 
     @FXML
@@ -137,6 +145,8 @@ public class mainMenuController implements Initializable{
             nodes.get(indexOfSelected).getButton().setStyle("-fx-font-size: 9 ; -fx-background-color: black ; -fx-text-fill: white ");
             this.labelNodeEnd.setText("");
             gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+            this.labelStartRute.setText("");
+            this.labelStartRuteWithConditions.setText("");
         }
     }
 
@@ -153,14 +163,257 @@ public class mainMenuController implements Initializable{
             nodes.get(indexOfSelected).getButton().setStyle("-fx-font-size: 9 ; -fx-background-color: black ; -fx-text-fill: white ");
             this.labelNodeStart.setText("");
             gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+            this.labelStartRute.setText("");
+            this.labelStartRuteWithConditions.setText("");
+        }
+    }
+//  En revisión
+    @FXML
+    void onActionStartRoute(ActionEvent event) {
+        // Obtener los nodos seleccionados y el algoritmo de choiceBox
+        String startNodeName = labelNodeStart.getText();
+        String endNodeName = labelNodeEnd.getText();
+        String algorithm = choiceBoxAlgorithms.getSelectionModel().getSelectedItem();
+
+        if (startNodeName == null || endNodeName == null || algorithm == null) {
+            new Message().showModal(Alert.AlertType.ERROR,"Error Iniciando la Ruta",labelNodeEnd.getScene().getWindow(),"Selecciona los nodos de inicio, fin y el algoritmo.");
+            return;
+        }
+
+        // Encontrar nodos de inicio y fin
+        Node startNode = findNodeByName(startNodeName);
+        Node endNode = findNodeByName(endNodeName);
+
+        if (startNode == null || endNode == null) {
+            new Message().showModal(Alert.AlertType.ERROR,"Error Iniciando la Ruta",labelNodeEnd.getScene().getWindow(),"Selecciona los nodos de inicio, fin.");
+            return;
+        }
+
+        // Obtener la ruta más corta según el algoritmo elegido
+        List<Node> route = findShortestPath(startNode, endNode, algorithm);
+
+        if (route == null || route.isEmpty()) {
+            System.out.println("No se encontró una ruta válida.");
+            return;
+        }
+
+        // Inicializar peso total y limpiar canvas
+        double totalWeight = 0.0;
+        gcFinalWay.clearRect(0, 0, canvasRoads.getWidth(), canvasRoads.getHeight());
+
+        // Coordenadas iniciales del vehículo
+        double vehicleX = startNode.getX();
+        double vehicleY = startNode.getY();
+        drawVehicle(vehicleX, vehicleY);
+
+        // Recorrer la ruta y aplicar condiciones de peso
+        for (int i = 0; i < route.size() - 1; i++) {
+            Node currentNode = route.get(i);
+            Node nextNode = route.get(i + 1);
+
+            int fromIndex = nodes.indexOf(currentNode);
+            int toIndex = nodes.indexOf(nextNode);
+
+            double edgeWeight = weights[fromIndex][toIndex];
+            int condition = conditions[fromIndex][toIndex];
+
+            switch (condition) {
+                case 1:
+                case 2:
+                    System.out.println("La calle está cerrada. No se puede continuar.");
+                    return;
+                case 3:
+                    break;
+                case 4:
+                    edgeWeight *= 2;
+                    break;
+                case 5:
+                    edgeWeight *= 3;
+                    break;
+            }
+            totalWeight += edgeWeight;
+        }
+        animateVehicle(route);
+        this.labelFinalRute.setText(String.valueOf((int)totalWeight));
+        this.calculateStartRuteWithConditions();
+    }
+
+    // Método para elegir el algoritmo según la selección del usuario
+    private List<Node> findShortestPath(Node start, Node end, String algorithm) {
+        if ("Dijkstra".equals(algorithm)) {
+            return dijkstra(start, end);
+        } else if ("Floyd".equals(algorithm)) {
+            return floydWarshall(start, end);
+        } else {
+            return null;
         }
     }
 
-    @FXML
-    void onActionNextStep(ActionEvent event) {
+    // Implementación del algoritmo de Dijkstra
+    private List<Node> dijkstra(Node start, Node end) {
+        int n = nodes.size();
+        double[] distances = new double[n];
+        Node[] previous = new Node[n];
+        Arrays.fill(distances, Double.POSITIVE_INFINITY);
+        distances[nodes.indexOf(start)] = 0;
 
+        PriorityQueue<Node> queue = new PriorityQueue<>(Comparator.comparingDouble(node -> distances[nodes.indexOf(node)]));
+        queue.add(start);
+
+        while (!queue.isEmpty()) {
+            Node current = queue.poll();
+            if (current.equals(end)) break;
+
+            int currentIndex = nodes.indexOf(current);
+
+            for (String adj : current.getAdjacencies()) {
+                Node neighbor = findNodeByName(adj);
+                int neighborIndex = nodes.indexOf(neighbor);
+                double weight = weights[currentIndex][neighborIndex];
+                int condition = conditions[currentIndex][neighborIndex];
+
+                if (condition == 1 || condition == 2) continue; // Calle cerrada o accidente
+                if (condition == 4) weight *= 2;
+                if (condition == 5) weight *= 3;
+
+                double newDist = distances[currentIndex] + weight;
+                if (newDist < distances[neighborIndex]) {
+                    distances[neighborIndex] = newDist;
+                    previous[neighborIndex] = current;
+                    queue.add(neighbor);
+                }
+            }
+        }
+
+        List<Node> path = new ArrayList<>();
+        for (Node at = end; at != null; at = previous[nodes.indexOf(at)]) {
+            path.add(at);
+        }
+        Collections.reverse(path);
+        return path;
     }
 
+    // Implementación del algoritmo de Floyd-Warshall
+    private List<Node> floydWarshall(Node start, Node end) {
+        int n = nodes.size();
+        double[][] dist = new double[n][n];
+        Node[][] next = new Node[n][n];
+
+        // Inicializar matrices de distancias y caminos
+        for (int i = 0; i < n; i++) {
+            Arrays.fill(dist[i], Double.POSITIVE_INFINITY);
+            dist[i][i] = 0;
+        }
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (weights[i][j] != 0) {
+                    double weight = weights[i][j];
+                    int condition = conditions[i][j];
+                    if (condition == 1 || condition == 2) continue;
+                    if (condition == 4) weight *= 2;
+                    if (condition == 5) weight *= 3;
+                    dist[i][j] = weight;
+                    next[i][j] = nodes.get(j);
+                }
+            }
+        }
+
+        // Aplicar Floyd-Warshall
+        for (int k = 0; k < n; k++) {
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    if (dist[i][k] + dist[k][j] < dist[i][j]) {
+                        dist[i][j] = dist[i][k] + dist[k][j];
+                        next[i][j] = next[i][k];
+                    }
+                }
+            }
+        }
+
+        // Construir la ruta desde el nodo start al nodo end
+        List<Node> path = new ArrayList<>();
+        Node at = start;
+        while (at != null && !at.equals(end)) {
+            path.add(at);
+            at = next[nodes.indexOf(at)][nodes.indexOf(end)];
+        }
+        if (at == null) return null;
+        path.add(end);
+        return path;
+    }
+
+    // Método auxiliar para encontrar el nodo por nombre
+    private Node findNodeByName(String name) {
+        return nodes.stream().filter(node -> node.getName().equals(name)).findFirst().orElse(null);
+    }
+
+    // Métodos auxiliares de dibujo y animación de vehículo
+    private void drawVehicle(double x, double y) {
+        gcFinalWay.setFill(Color.LIME);
+        gcFinalWay.fillOval(x - 5, y - 5, 10, 10);
+    }
+
+    public void animateVehicle(List<Node> rute) {
+        if (rute == null || rute.isEmpty()) {
+            System.out.println("La lista de nodos está vacía.");
+            return;
+        }
+
+        Timeline timeline = new Timeline();
+        for (int i = 0; i < rute.size() - 1; i++) {
+            Node startNode = rute.get(i);
+            Node endNode = rute.get(i + 1);
+            int xN1 = startNode.getX();
+            int yN1 = startNode.getY();
+            int xN2 = endNode.getX();
+            int yN2 = endNode.getY();
+            int gap = 5;
+            if (startNode.getX() < endNode.getX() && startNode.getY() < endNode.getY()) {
+                xN1 -= gap;
+                xN2 -= gap;
+                yN1 += gap;
+                yN2 += gap;
+            } else if (startNode.getX() > endNode.getX() && startNode.getY() < endNode.getY()) {
+                xN1 -= gap;
+                xN2 -= gap;
+                yN1 -= gap;
+                yN2 -= gap;
+            } else if (startNode.getX() > endNode.getX() && startNode.getY() > endNode.getY()) {
+                xN1 += gap;
+                xN2 += gap;
+                yN1 -= gap;
+                yN2 -= gap;
+            } else {
+                xN1 += gap;
+                xN2 += gap;
+                yN1 += gap;
+                yN2 += gap;
+            }
+            double startX = xN1;
+            double startY = yN1;
+            double endX = xN2;
+            double endY = yN2;
+
+            int steps = 25; // Número de pasos para que el movimiento sea más suave
+            System.out.println("steps " + steps);
+            double stepX = (endX - startX) / steps;
+            double stepY = (endY - startY) / steps;
+
+            for (int j = 0; j <= steps; j++) {
+                final double x = startX + stepX * j;
+                final double y = startY + stepY * j;
+                KeyFrame keyFrame = new KeyFrame(Duration.millis(i * steps * 50 + j * 50), event -> {
+                    //gcFinalWay.clearRect(startX - 5, startY - 5, 10, 10); // Limpiar el vehículo anterior
+                    drawVehicle(x, y);
+                });
+                timeline.getKeyFrames().add(keyFrame);
+            }
+        }
+        timeline.play();
+    }
+
+    // Final de revisión
     void handleChoiceBoxNode1Selection(ActionEvent event) {
         String selected = this.choiceBoxNode1.getSelectionModel().getSelectedItem();
         Node node1Selected = null;
@@ -200,11 +453,13 @@ public class mainMenuController implements Initializable{
         if(!this.labelNodeStart.getText().isEmpty() && !this.labelNodeEnd.getText().isEmpty()){
             if(this.choiceBoxAlgorithms.getSelectionModel().getSelectedItem().equals("Dijkstra")){
                 cleanStartWay();
-                System.out.println(calculateAndDrawDijkstra(labelNodeStart.getText(), labelNodeEnd.getText()));
+                double value = calculateAndDrawDijkstra(labelNodeStart.getText(), labelNodeEnd.getText());
+                this.labelStartRute.setText(String.valueOf((int) value));
                 drawStartWay();
             }else{
                 cleanStartWay();
-                System.out.println(calculateAndDrawFloydWarshall(labelNodeStart.getText(), labelNodeEnd.getText()));
+                double value = calculateAndDrawFloydWarshall(labelNodeStart.getText(), labelNodeEnd.getText());
+                this.labelStartRute.setText(String.valueOf((int) value));
                 drawStartWay();
             }
         }
@@ -262,7 +517,7 @@ public class mainMenuController implements Initializable{
             path.add(nodes.get(at));
         }
         Collections.reverse(path);
-
+        this.startPath = path;
         // Dibujar la ruta usando paintEdge y calcular el peso total
         double totalWeight = 0;
         for (int i = 0; i < path.size() - 1; i++) {
@@ -335,7 +590,7 @@ public class mainMenuController implements Initializable{
         if (at != -1) {
             path.add(nodes.get(indexNode2));
         }
-
+        this.startPath = path;
         // Dibujar la ruta y calcular el peso total
         double totalWeight = dist[indexNode1][indexNode2];
         for (int i = 0; i < path.size() - 1; i++) {
@@ -344,7 +599,6 @@ public class mainMenuController implements Initializable{
             startWay[nodes.indexOf(n1)][nodes.indexOf(n2)] = 1;
 //            paintEdge(path.get(i), path.get(i + 1), Color.BLUE, 2); // Cambia el color y grosor según sea necesario
         }
-
         return totalWeight;
     }
 
@@ -396,6 +650,7 @@ public class mainMenuController implements Initializable{
             System.out.println("\n");
         }
         calculateEdges();
+        rutePane.getChildren().add(canvasFinalWay);
         rutePane.getChildren().add(canvas);
         conditionsPane.getChildren().add(canvasConditions);
         roadsPane.getChildren().add(canvasRoads);
@@ -408,7 +663,7 @@ public class mainMenuController implements Initializable{
         this.conditions = new int[nodes.size()][nodes.size()];
         this.startWay = new int[nodes.size()][nodes.size()];
         this.choiceBoxNode1.setOnAction(this::handleChoiceBoxNode1Selection);
-        this.choiceBoxCondition.getItems().addAll("Cerrada","Accidentes","Trafico");
+        this.choiceBoxCondition.getItems().addAll("Cerrada por manteniomiento(COSEVI)","Cerrada por accidente","Trafico");
         this.choiceBoxCondition.setOnAction(this::handleChoiceBoxCondition);
         this.choiceBoxTraficLevel.getItems().addAll("1","2","3");
         this.choiceBoxTraficLevel.setDisable(true);
@@ -668,5 +923,37 @@ public class mainMenuController implements Initializable{
                 }
             }
         }
+    }
+    private void calculateStartRuteWithConditions(){
+        double totalWeight=0;
+        this.labelStartRuteWithConditions.setText("");
+        for (int i = 0; i < this.startPath.size() - 1; i++) {
+            Node currentNode = this.startPath.get(i);
+            Node nextNode = this.startPath.get(i + 1);
+
+            int fromIndex = nodes.indexOf(currentNode);
+            int toIndex = nodes.indexOf(nextNode);
+
+            double edgeWeight = weights[fromIndex][toIndex];
+            int condition = conditions[fromIndex][toIndex];
+
+            switch (condition) {
+                case 1:
+                    this.labelStartRuteWithConditions.setText("Cerrada por mantenimiento del COSEVI");
+                    return;
+                case 2:
+                    this.labelStartRuteWithConditions.setText("Cerrada por accidente");
+                    return;
+                case 3:
+                    break;
+                case 4:
+                    edgeWeight *= 2;
+                    break;
+                case 5:
+                    edgeWeight *= 3;
+                    break;
+            }
+            totalWeight += edgeWeight;
+        }this.labelStartRuteWithConditions.setText(String.valueOf((int)totalWeight));
     }
 }

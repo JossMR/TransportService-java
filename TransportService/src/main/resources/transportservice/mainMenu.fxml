@@ -29,93 +29,153 @@
             </VBox>
             <VBox prefHeight="200.0" prefWidth="100.0" HBox.hgrow="ALWAYS">
                <children>
-                  <HBox prefHeight="225.0" prefWidth="400.0">
+                  <Pane prefHeight="240.0" prefWidth="400.0" style="-fx-background-color: #8afff7;">
                      <children>
-                        <VBox alignment="CENTER" prefHeight="477.0" prefWidth="400.0" HBox.hgrow="ALWAYS">
+                        <HBox prefHeight="240.0" prefWidth="400.0">
                            <children>
-                              <Label text="AGREGAR CONDICIÓN" />
-                              <HBox prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                              <VBox alignment="CENTER" prefHeight="477.0" prefWidth="400.0" HBox.hgrow="ALWAYS">
                                  <children>
-                                    <ChoiceBox fx:id="choiceBoxNode1" prefHeight="26.0" prefWidth="264.0" HBox.hgrow="ALWAYS" />
-                                    <ChoiceBox fx:id="choiceBoxNode2" prefHeight="26.0" prefWidth="259.0" HBox.hgrow="ALWAYS" />
-                                 </children>
-                              </HBox>
-                              <VBox prefHeight="200.0" prefWidth="100.0">
-                                 <children>
-                                    <ChoiceBox fx:id="choiceBoxCondition" prefHeight="89.0" prefWidth="421.0" VBox.vgrow="ALWAYS" />
+                                    <Label text="CONDICIÓN" />
+                                    <HBox prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                                       <children>
+                                          <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" HBox.hgrow="ALWAYS">
+                                             <children>
+                                                <Label text="Nodo de inicio" />
+                                                <ChoiceBox fx:id="choiceBoxNode1" prefHeight="26.0" prefWidth="259.0" />
+                                             </children>
+                                          </VBox>
+                                          <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" HBox.hgrow="ALWAYS">
+                                             <children>
+                                                <Label text="Nodo de final" />
+                                                <ChoiceBox fx:id="choiceBoxNode2" prefHeight="26.0" prefWidth="264.0" />
+                                             </children>
+                                          </VBox>
+                                       </children>
+                                    </HBox>
+                                    <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0">
+                                       <children>
+                                          <Label text="Condición" />
+                                          <ChoiceBox fx:id="choiceBoxCondition" prefHeight="89.0" prefWidth="421.0" VBox.vgrow="ALWAYS" />
+                                       </children>
+                                    </VBox>
+                                    <VBox alignment="CENTER" prefHeight="162.0" prefWidth="400.0">
+                                       <children>
+                                          <Label text="Nivel de trafico (Solo para la condición trafico)" />
+                                          <ChoiceBox fx:id="choiceBoxTraficLevel" prefHeight="89.0" prefWidth="400.0" VBox.vgrow="ALWAYS" />
+                                       </children>
+                                    </VBox>
+                                    <Button mnemonicParsing="false" onAction="#onActionAddCondition" prefHeight="181.0" prefWidth="400.0" text="Agregar Condición" VBox.vgrow="ALWAYS" />
                                  </children>
                               </VBox>
-                              <VBox prefHeight="162.0" prefWidth="400.0">
-                                 <children>
-                                    <ChoiceBox fx:id="choiceBoxTraficLevel" prefHeight="89.0" prefWidth="400.0" VBox.vgrow="ALWAYS" />
-                                 </children>
-                              </VBox>
-                              <Button mnemonicParsing="false" onAction="#onActionAddCondition" prefHeight="181.0" prefWidth="400.0" text="Agregar Condición" VBox.vgrow="ALWAYS" />
                            </children>
-                        </VBox>
-                     </children>
-                  </HBox>
-                  <VBox alignment="CENTER" prefHeight="105.0" prefWidth="400.0">
-                     <children>
-                        <Label text="Algoritmo" />
-                        <HBox alignment="CENTER" prefHeight="211.0" prefWidth="400.0" VBox.vgrow="ALWAYS">
-                           <children>
-                              <ChoiceBox fx:id="choiceBoxAlgorithms" prefWidth="150.0" HBox.hgrow="ALWAYS" />
-                           </children>
+                           <padding>
+                              <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                           </padding>
                         </HBox>
                      </children>
+                  </Pane>
+                  <Pane style="-fx-background-color: #b7ff8a;">
                      <VBox.margin>
                         <Insets />
                      </VBox.margin>
-                     <padding>
-                        <Insets top="20.0" />
-                     </padding>
-                  </VBox>
-                  <VBox alignment="CENTER" prefHeight="135.0" prefWidth="400.0">
                      <children>
-                        <Label text="Nodos para la ruta" />
-                        <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
+                        <VBox alignment="CENTER" prefHeight="105.0" prefWidth="400.0">
                            <children>
-                              <Pane style="-fx-background-color: #006f73;" HBox.hgrow="ALWAYS">
+                              <Label text="Algoritmo" />
+                              <HBox alignment="CENTER" prefHeight="211.0" prefWidth="400.0" VBox.vgrow="ALWAYS">
                                  <children>
-                                    <VBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
-                                       <children>
-                                          <Label text="Inicio" />
-                                          <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
-                                             <children>
-                                                <Label fx:id="labelNodeStart" prefHeight="60.0" prefWidth="60.0" HBox.hgrow="ALWAYS" />
-                                                <Button mnemonicParsing="false" onAction="#onActionDeleteNodeStart" prefHeight="50.0" prefWidth="50.0" text="X" HBox.hgrow="ALWAYS" />
-                                             </children>
-                                          </HBox>
-                                       </children>
-                                    </VBox>
+                                    <ChoiceBox fx:id="choiceBoxAlgorithms" prefWidth="150.0" HBox.hgrow="ALWAYS" />
                                  </children>
-                              </Pane>
-                              <Pane style="-fx-background-color: #15c618;" HBox.hgrow="ALWAYS">
-                                 <children>
-                                    <VBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
-                                       <children>
-                                          <Label text="Final" />
-                                          <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
-                                             <children>
-                                                <Label fx:id="labelNodeEnd" prefHeight="60.0" prefWidth="60.0" HBox.hgrow="ALWAYS" />
-                                                <Button mnemonicParsing="false" onAction="#onActionDeleteNodeEnd" prefHeight="50.0" prefWidth="50.0" text="X" HBox.hgrow="ALWAYS" />
-                                             </children>
-                                          </HBox>
-                                       </children>
-                                    </VBox>
-                                 </children>
-                              </Pane>
+                              </HBox>
                            </children>
-                        </HBox>
+                           <padding>
+                              <Insets top="20.0" />
+                           </padding>
+                        </VBox>
                      </children>
-                  </VBox>
-                  <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" spacing="30.0">
+                  </Pane>
+                  <Pane style="-fx-background-color: #ffe28a;">
                      <children>
-                        <Button mnemonicParsing="false" onAction="#onActionCalculateRute" text="Calcular Ruta" />
-                        <Button mnemonicParsing="false" onAction="#onActionNextStep" text="Siguiente Paso" />
+                        <VBox alignment="CENTER" prefHeight="135.0" prefWidth="400.0">
+                           <children>
+                              <Label text="Nodos para la ruta" />
+                              <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
+                                 <children>
+                                    <Pane style="-fx-background-color: #006f73;" HBox.hgrow="ALWAYS">
+                                       <children>
+                                          <VBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
+                                             <children>
+                                                <Label text="Inicio" textFill="WHITE" />
+                                                <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                                                   <children>
+                                                      <Label fx:id="labelNodeStart" prefHeight="60.0" prefWidth="60.0" HBox.hgrow="ALWAYS" />
+                                                      <Button mnemonicParsing="false" onAction="#onActionDeleteNodeStart" prefHeight="50.0" prefWidth="50.0" text="X" HBox.hgrow="ALWAYS" />
+                                                   </children>
+                                                </HBox>
+                                             </children>
+                                          </VBox>
+                                       </children>
+                                    </Pane>
+                                    <Pane style="-fx-background-color: #15c618;" HBox.hgrow="ALWAYS">
+                                       <children>
+                                          <VBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
+                                             <children>
+                                                <Label text="Final" textFill="WHITE" />
+                                                <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                                                   <children>
+                                                      <Label fx:id="labelNodeEnd" prefHeight="60.0" prefWidth="60.0" HBox.hgrow="ALWAYS" />
+                                                      <Button mnemonicParsing="false" onAction="#onActionDeleteNodeEnd" prefHeight="50.0" prefWidth="50.0" text="X" HBox.hgrow="ALWAYS" />
+                                                   </children>
+                                                </HBox>
+                                             </children>
+                                          </VBox>
+                                       </children>
+                                    </Pane>
+                                 </children>
+                              </HBox>
+                           </children>
+                        </VBox>
                      </children>
-                  </VBox>
+                  </Pane>
+                  <Pane prefHeight="257.0" prefWidth="400.0" style="-fx-background-color: #ffe28a;" VBox.vgrow="ALWAYS">
+                     <children>
+                        <VBox alignment="CENTER" prefHeight="370.0" prefWidth="400.0" spacing="10.0">
+                           <children>
+                              <HBox prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                                 <children>
+                                    <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" spacing="20.0" HBox.hgrow="ALWAYS">
+                                       <children>
+                                          <Label text="Ruta Original Sin condiciones" />
+                                          <Label fx:id="labelStartRute" />
+                                       </children>
+                                    </VBox>
+                                    <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" spacing="20.0" HBox.hgrow="ALWAYS">
+                                       <children>
+                                          <Label text="Ruta Final" />
+                                          <Label fx:id="labelFinalRute" />
+                                       </children>
+                                    </VBox>
+                                 </children>
+                              </HBox>
+                              <HBox prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                                 <children>
+                                    <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" spacing="20.0" HBox.hgrow="ALWAYS">
+                                       <children>
+                                          <Label text="Ruta Original Con condiciones" />
+                                          <Label fx:id="labelStartRuteWithConditions" alignment="CENTER" contentDisplay="CENTER" prefHeight="44.0" prefWidth="190.0" wrapText="true" />
+                                       </children>
+                                    </VBox>
+                                    <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" HBox.hgrow="ALWAYS" />
+                                 </children>
+                              </HBox>
+                              <Button mnemonicParsing="false" onAction="#onActionStartRoute" prefHeight="77.0" prefWidth="95.0" text="Iniciar Ruta" VBox.vgrow="ALWAYS" />
+                           </children>
+                           <padding>
+                              <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                           </padding>
+                        </VBox>
+                     </children>
+                  </Pane>
                </children>
             </VBox>
          </children>
