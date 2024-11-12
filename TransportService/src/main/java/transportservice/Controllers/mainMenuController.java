@@ -429,7 +429,7 @@ public class mainMenuController implements Initializable{
             }else{
                 cleanStartWay();
                 double value = calculateAndDrawFloydWarshall(labelNodeStart.getText(), labelNodeEnd.getText());
-                this.labelStartRute.setText(String.valueOf((int) value));
+                this.labelStartRute.setText("₡ "+String.valueOf((int) value));
                 drawStartWay();
             }
         }
