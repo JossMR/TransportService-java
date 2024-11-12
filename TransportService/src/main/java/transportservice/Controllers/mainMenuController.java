@@ -27,6 +27,8 @@ import transportservice.util.*;
 
 public class mainMenuController implements Initializable{
     @FXML
+    private Button buttonStartRute;
+    @FXML
     private ImageView map;
     @FXML
     private Pane buttonsPane;
@@ -127,8 +129,8 @@ public class mainMenuController implements Initializable{
             if (condition != -1 && posNode1 != -1 && posNode2 != -1) {
                 System.out.println("Se asigna " + condition);
                 conditions[posNode1][posNode2] = condition;
+                drawConditions();
             }
-            drawConditions();
         }
     }
 
@@ -176,7 +178,7 @@ public class mainMenuController implements Initializable{
         String algorithm = choiceBoxAlgorithms.getSelectionModel().getSelectedItem();
 
         if (startNodeName == null || endNodeName == null || algorithm == null) {
-            new Message().showModal(Alert.AlertType.ERROR,"Error Iniciando la Ruta",labelNodeEnd.getScene().getWindow(),"Selecciona los nodos de inicio, fin y el algoritmo.");
+            new Message().showModal(Alert.AlertType.ERROR, "Error Iniciando la Ruta", labelNodeEnd.getScene().getWindow(), "Selecciona los nodos de inicio, fin y el algoritmo.");
             return;
         }
 
@@ -185,60 +187,87 @@ public class mainMenuController implements Initializable{
         Node endNode = findNodeByName(endNodeName);
 
         if (startNode == null || endNode == null) {
-            new Message().showModal(Alert.AlertType.ERROR,"Error Iniciando la Ruta",labelNodeEnd.getScene().getWindow(),"Selecciona los nodos de inicio, fin.");
+            new Message().showModal(Alert.AlertType.ERROR, "Error Iniciando la Ruta", labelNodeEnd.getScene().getWindow(), "Selecciona los nodos de inicio, fin.");
             return;
         }
 
-        // Obtener la ruta más corta según el algoritmo elegido
-        List<Node> route = findShortestPath(startNode, endNode, algorithm);
-
-        if (route == null || route.isEmpty()) {
-            System.out.println("No se encontró una ruta válida.");
-            return;
-        }
-
-        // Inicializar peso total y limpiar canvas
-        double totalWeight = 0.0;
+        // Limpiar canvas y peso total inicial
         gcFinalWay.clearRect(0, 0, canvasRoads.getWidth(), canvasRoads.getHeight());
+        double[] totalWeight = {0.0}; // Arreglo para permitir cambios dentro de la animación
 
-        // Coordenadas iniciales del vehículo
-        double vehicleX = startNode.getX();
-        double vehicleY = startNode.getY();
-        drawVehicle(vehicleX, vehicleY);
-
-        // Recorrer la ruta y aplicar condiciones de peso
-        for (int i = 0; i < route.size() - 1; i++) {
-            Node currentNode = route.get(i);
-            Node nextNode = route.get(i + 1);
-
-            int fromIndex = nodes.indexOf(currentNode);
-            int toIndex = nodes.indexOf(nextNode);
-
-            double edgeWeight = weights[fromIndex][toIndex];
-            int condition = conditions[fromIndex][toIndex];
-
-            switch (condition) {
-                case 1:
-                case 2:
-                    System.out.println("La calle está cerrada. No se puede continuar.");
-                    return;
-                case 3:
-                    break;
-                case 4:
-                    edgeWeight *= 2;
-                    break;
-                case 5:
-                    edgeWeight *= 3;
-                    break;
-            }
-            totalWeight += edgeWeight;
-        }
-        animateVehicle(route);
-        this.labelFinalRute.setText(String.valueOf((int)totalWeight));
-        this.calculateStartRuteWithConditions();
+        // Iniciar la animación y recálculo de la ruta
+        this.labelFinalRute.setText("");
+        this.labelStartRuteWithConditions.setText("");
+        this.buttonStartRute.setDisable(true);
+        animateAndRecalculate(startNode, endNode, algorithm, totalWeight);
     }
 
-    // Método para elegir el algoritmo según la selección del usuario
+    private void animateAndRecalculate(Node currentNode, Node endNode, String algorithm, double[] totalWeight) {
+        // Recalcular la ruta cada vez que el vehículo alcanza un nuevo nodo
+        List<Node> route = findShortestPath(currentNode, endNode, algorithm);
+
+        if (route == null || route.size() < 2) {
+            System.out.println("No se encontró una ruta válida o el vehículo ha llegado al destino.");
+            this.labelFinalRute.setText(String.valueOf((int) totalWeight[0]));
+            this.calculateStartRuteWithConditions();
+            this.buttonStartRute.setDisable(false);
+            return;
+        }
+
+        Node nextNode = route.get(1); // Siguiente nodo en la ruta
+
+        int fromIndex = nodes.indexOf(currentNode);
+        int toIndex = nodes.indexOf(nextNode);
+        double edgeWeight = weights[fromIndex][toIndex];
+        int condition = conditions[fromIndex][toIndex];
+
+        switch (condition) {
+            case 1:
+            case 2:
+                System.out.println("La calle está cerrada. No se puede continuar.");
+                return;
+            case 4:
+                edgeWeight *= 2;
+                break;
+            case 5:
+                edgeWeight *= 3;
+                break;
+        }
+
+        totalWeight[0] += edgeWeight;
+
+        // Animar el vehículo hacia el siguiente nodo y luego llamar recursivamente a este método
+        animateVehicleToNextNode(currentNode, nextNode, () -> animateAndRecalculate(nextNode, endNode, algorithm, totalWeight));
+    }
+
+    private void animateVehicleToNextNode(Node startNode, Node endNode, Runnable onFinished) {
+        Timeline timeline = new Timeline();
+        int steps = 25;
+        double startX = startNode.getX();
+        double startY = startNode.getY();
+        double endX = endNode.getX();
+        double endY = endNode.getY();
+        double stepX = (endX - startX) / steps;
+        double stepY = (endY - startY) / steps;
+
+        for (int j = 0; j <= steps; j++) {
+            final double x = startX + stepX * j;
+            final double y = startY + stepY * j;
+            KeyFrame keyFrame = new KeyFrame(Duration.millis(j * 50), event -> {
+                gcFinalWay.clearRect(startX - 5, startY - 5, 10, 10);
+                drawVehicle(x, y);
+            });
+            timeline.getKeyFrames().add(keyFrame);
+        }
+
+        timeline.setOnFinished(e -> {
+            drawVehicle(endX, endY);
+            onFinished.run(); // Llama al siguiente paso una vez la animación ha terminado
+        });
+
+        timeline.play();
+    }
+
     private List<Node> findShortestPath(Node start, Node end, String algorithm) {
         if ("Dijkstra".equals(algorithm)) {
             return dijkstra(start, end);
@@ -348,69 +377,10 @@ public class mainMenuController implements Initializable{
         return nodes.stream().filter(node -> node.getName().equals(name)).findFirst().orElse(null);
     }
 
-    // Métodos auxiliares de dibujo y animación de vehículo
+    // Método para dibujar el vehículo
     private void drawVehicle(double x, double y) {
         gcFinalWay.setFill(Color.LIME);
         gcFinalWay.fillOval(x - 5, y - 5, 10, 10);
-    }
-
-    public void animateVehicle(List<Node> rute) {
-        if (rute == null || rute.isEmpty()) {
-            System.out.println("La lista de nodos está vacía.");
-            return;
-        }
-
-        Timeline timeline = new Timeline();
-        for (int i = 0; i < rute.size() - 1; i++) {
-            Node startNode = rute.get(i);
-            Node endNode = rute.get(i + 1);
-            int xN1 = startNode.getX();
-            int yN1 = startNode.getY();
-            int xN2 = endNode.getX();
-            int yN2 = endNode.getY();
-            int gap = 5;
-            if (startNode.getX() < endNode.getX() && startNode.getY() < endNode.getY()) {
-                xN1 -= gap;
-                xN2 -= gap;
-                yN1 += gap;
-                yN2 += gap;
-            } else if (startNode.getX() > endNode.getX() && startNode.getY() < endNode.getY()) {
-                xN1 -= gap;
-                xN2 -= gap;
-                yN1 -= gap;
-                yN2 -= gap;
-            } else if (startNode.getX() > endNode.getX() && startNode.getY() > endNode.getY()) {
-                xN1 += gap;
-                xN2 += gap;
-                yN1 -= gap;
-                yN2 -= gap;
-            } else {
-                xN1 += gap;
-                xN2 += gap;
-                yN1 += gap;
-                yN2 += gap;
-            }
-            double startX = xN1;
-            double startY = yN1;
-            double endX = xN2;
-            double endY = yN2;
-
-            int steps = 25; // Número de pasos para que el movimiento sea más suave
-            System.out.println("steps " + steps);
-            double stepX = (endX - startX) / steps;
-            double stepY = (endY - startY) / steps;
-
-            for (int j = 0; j <= steps; j++) {
-                final double x = startX + stepX * j;
-                final double y = startY + stepY * j;
-                KeyFrame keyFrame = new KeyFrame(Duration.millis(i * steps * 50 + j * 50), event -> {
-                    //gcFinalWay.clearRect(startX - 5, startY - 5, 10, 10); // Limpiar el vehículo anterior
-                    drawVehicle(x, y);
-                });
-                timeline.getKeyFrames().add(keyFrame);
-            }
-        }
-        timeline.play();
     }
 
     // Final de revisión
@@ -924,6 +894,7 @@ public class mainMenuController implements Initializable{
             }
         }
     }
+
     private void calculateStartRuteWithConditions(){
         double totalWeight=0;
         this.labelStartRuteWithConditions.setText("");

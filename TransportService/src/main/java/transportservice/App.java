@@ -18,7 +18,7 @@ public class App extends Application {
         scene = new Scene(loadFXML("mainMenu"));
         stage.setScene(scene);
         stage.setResizable(false);
-        stage.setTitle("SOKOBAN");
+        stage.setTitle("Servicio de Transporte");
         stage.show();
     }
 
