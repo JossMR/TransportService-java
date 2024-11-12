@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import java.io.IOException;
 /**
@@ -20,6 +21,9 @@ public class App extends Application {
         stage.setResizable(false);
         stage.setTitle("Servicio de Transporte");
         stage.setY(0);
+        if ( Screen.getPrimary().getBounds().getHeight()< 850){
+            stage.setHeight(Screen.getPrimary().getBounds().getHeight());
+        }
         stage.show();
     }
 
