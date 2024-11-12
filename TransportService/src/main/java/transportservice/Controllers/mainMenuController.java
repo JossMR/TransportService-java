@@ -127,7 +127,6 @@ public class mainMenuController implements Initializable{
                     break;
             }
             if (condition != -1 && posNode1 != -1 && posNode2 != -1) {
-                System.out.println("Se asigna " + condition);
                 conditions[posNode1][posNode2] = condition;
                 drawConditions();
             }
@@ -169,7 +168,7 @@ public class mainMenuController implements Initializable{
             this.labelStartRuteWithConditions.setText("");
         }
     }
-//  En revisión
+//Logica para el recorrido de la ruta
     @FXML
     void onActionStartRoute(ActionEvent event) {
         // Obtener los nodos seleccionados y el algoritmo de choiceBox
@@ -277,8 +276,7 @@ public class mainMenuController implements Initializable{
             return null;
         }
     }
-
-    // Implementación del algoritmo de Dijkstra
+//Dijkstra flexible
     private List<Node> dijkstra(Node start, Node end) {
         int n = nodes.size();
         double[] distances = new double[n];
@@ -321,8 +319,7 @@ public class mainMenuController implements Initializable{
         Collections.reverse(path);
         return path;
     }
-
-    // Implementación del algoritmo de Floyd-Warshall
+//Floyd flexible
     private List<Node> floydWarshall(Node start, Node end) {
         int n = nodes.size();
         double[][] dist = new double[n][n];
@@ -372,23 +369,19 @@ public class mainMenuController implements Initializable{
         return path;
     }
 
-    // Método auxiliar para encontrar el nodo por nombre
     private Node findNodeByName(String name) {
         return nodes.stream().filter(node -> node.getName().equals(name)).findFirst().orElse(null);
     }
 
-    // Método para dibujar el vehículo
     private void drawVehicle(double x, double y) {
         gcFinalWay.setFill(Color.LIME);
         gcFinalWay.fillOval(x - 5, y - 5, 10, 10);
     }
 
-    // Final de revisión
     void handleChoiceBoxNode1Selection(ActionEvent event) {
         String selected = this.choiceBoxNode1.getSelectionModel().getSelectedItem();
         Node node1Selected = null;
         if(!selected.isEmpty()){
-            System.out.println("Elemento seleccionado: " + selected);
             for (Node node : nodes){
                 if (node.getName().equals(selected)){
                     node1Selected = node;
@@ -614,11 +607,7 @@ public class mainMenuController implements Initializable{
                 }
             }
         }
-        for (int i = 0; i < nodes.size(); i++) {
-            System.out.print(nodes.get(i).getName());
-            nodes.get(i).getAdjacencies().stream().forEach(ad-> System.out.print(" "+ad + " "));
-            System.out.println("\n");
-        }
+
         calculateEdges();
         rutePane.getChildren().add(canvasFinalWay);
         rutePane.getChildren().add(canvas);
@@ -656,7 +645,6 @@ public class mainMenuController implements Initializable{
                     double x2 = nodes.get(j).getX(), y2 = nodes.get(j).getY();
                     double value = (double) Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
                     this.weights[i][j] = value;
-                    //System.out.println("Distancia entre : "+ nodes.get(i).getName() + " y "+ nodes.get(j).getName()+ " = " + value);
                 }
             }
         }
@@ -665,44 +653,8 @@ public class mainMenuController implements Initializable{
     private void calculateEdges() {
     Color c = Color.RED;
     int size = nodes.size();
-//        for (int i=0; i< size; i++) {
-//            for (int j=i; j< size; j++) {
-//                printMid(nodes.get(i), nodes.get(j));
-//                if(data.adjacent[i][j] == 1){
-//                    paintEdge(nodes.get(i), nodes.get(j),c,5);
-//                }
-//            }
-//        }
-//        c= Color.BLUE;
-//        for (int i=0; i< size; i++) {
-//            for (int j=i; j< size; j++) {
-//                printMid(nodes.get(i), nodes.get(j));
-//                if(data.adjacent[j][i] == 1){
-//                    paintEdge(nodes.get(i), nodes.get(j),c,3);
-//                }
-//            }
-//        }
     }
 
-    private void printMid(Node n, Node n1) {
-        int midX = (n.getX() + n1.getX()) / 2;
-        int midY = (n.getY() + n1.getY()) / 2;
-
-        PixelReader pixelReader = map.getImage().getPixelReader();
-        int argb = pixelReader.getArgb(midX, midY);
-        int red = (argb >> 16) & 0xff;
-        int green = (argb >> 8) & 0xff;
-        int blue = argb & 0xff;
-//        if((red == 139 && green == 165 && blue == 193) || (red == 211 && green == 220 && blue == 228)){
-//            paintEdge(n,n1);
-//        }
-//        System.out.println("Color en el punto medio (" + n.getName() + ", " + n1.getName() + "): " + "R: " + red + ", G: " + green + ", B: " + blue);
-    }
-    void paintEdge(Node n1, Node n2,Color c, int lane){
-        gc.setStroke(c);
-        gc.setLineWidth(lane);
-        gc.strokeLine(n1.getX(), n1.getY(), n2.getX(), n2.getY());
-    }
     //StartWay Functions
     private void updateStartWay(){
         this.cleanStartWay();
@@ -754,7 +706,7 @@ public class mainMenuController implements Initializable{
             }
         }
     }
-
+    //Roads Functions
     private void drawRoads(){
         for (int i = 0; i < nodes.size(); i++) {
             for (int j = i; j < nodes.size(); j++) {
@@ -831,7 +783,7 @@ public class mainMenuController implements Initializable{
             }
         }
     }
-
+    //Conditions Functions
     private void drawConditions(){
         gcConditions.clearRect(0,0,canvasConditions.getWidth(),canvasConditions.getHeight());
 
@@ -839,8 +791,8 @@ public class mainMenuController implements Initializable{
         int lineWidth = 0;
         int gap = 5;
         for (int i = 0; i < nodes.size(); i++) {
-            for (int j = i; j < nodes.size(); j++) {
-                if(conditions[i][j] != 0){
+            for (int j = 0; j < nodes.size(); j++) {
+                if(conditions[i][j] > 0){
                     switch(conditions[i][j]){
                         case 1:
                             c = Color.BLACK;
@@ -894,7 +846,7 @@ public class mainMenuController implements Initializable{
             }
         }
     }
-
+    //Extra label Function
     private void calculateStartRuteWithConditions(){
         double totalWeight=0;
         this.labelStartRuteWithConditions.setText("");
