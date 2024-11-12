@@ -208,7 +208,7 @@ public class mainMenuController implements Initializable{
 
         if (route == null || route.size() < 2) {
             System.out.println("No se encontró una ruta válida o el vehículo ha llegado al destino.");
-            this.labelFinalRute.setText(String.valueOf((int) totalWeight[0]));
+            this.labelFinalRute.setText("₡ "+String.valueOf((int) totalWeight[0]));
             this.calculateStartRuteWithConditions();
             this.buttonStartRute.setDisable(false);
             return;
@@ -424,7 +424,7 @@ public class mainMenuController implements Initializable{
             if(this.choiceBoxAlgorithms.getSelectionModel().getSelectedItem().equals("Dijkstra")){
                 cleanStartWay();
                 double value = calculateAndDrawDijkstra(labelNodeStart.getText(), labelNodeEnd.getText());
-                this.labelStartRute.setText(String.valueOf((int) value));
+                this.labelStartRute.setText("₡ "+String.valueOf((int) value));
                 drawStartWay();
             }else{
                 cleanStartWay();
@@ -925,6 +925,6 @@ public class mainMenuController implements Initializable{
                     break;
             }
             totalWeight += edgeWeight;
-        }this.labelStartRuteWithConditions.setText(String.valueOf((int)totalWeight));
+        }this.labelStartRuteWithConditions.setText("₡ "+String.valueOf((int)totalWeight));
     }
 }

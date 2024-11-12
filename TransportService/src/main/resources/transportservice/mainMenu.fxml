@@ -147,25 +147,29 @@
                                  <children>
                                     <HBox prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
                                        <children>
-                                          <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" spacing="20.0" HBox.hgrow="ALWAYS">
+                                          <VBox alignment="CENTER" maxWidth="190.0" prefHeight="132.0" prefWidth="100.0" spacing="20.0" HBox.hgrow="ALWAYS">
                                              <children>
-                                                <Label text="Ruta Original Sin condiciones" />
+                                                <Label text="Tarifa Original Sin condiciones" />
                                                 <Label fx:id="labelStartRute" />
                                              </children>
                                           </VBox>
-                                          <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" spacing="20.0" HBox.hgrow="ALWAYS">
+                                          <Pane prefHeight="200.0" prefWidth="100.0" style="-fx-background-color: #ffe81c;" HBox.hgrow="ALWAYS">
                                              <children>
-                                                <Label text="Ruta Final" />
-                                                <Label fx:id="labelFinalRute" />
+                                                <VBox alignment="CENTER" maxHeight="132.0" maxWidth="190.0" minHeight="132.0" minWidth="190.0" prefHeight="132.0" prefWidth="190.0" spacing="20.0">
+                                                   <children>
+                                                      <Label text="Tarifa Final" />
+                                                      <Label fx:id="labelFinalRute" />
+                                                   </children>
+                                                </VBox>
                                              </children>
-                                          </VBox>
+                                          </Pane>
                                        </children>
                                     </HBox>
                                     <HBox prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
                                        <children>
                                           <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" spacing="20.0" HBox.hgrow="ALWAYS">
                                              <children>
-                                                <Label text="Ruta Original Con condiciones" />
+                                                <Label text="Tarifa Original Con condiciones" />
                                                 <Label fx:id="labelStartRuteWithConditions" alignment="CENTER" contentDisplay="CENTER" prefHeight="44.0" prefWidth="190.0" wrapText="true" />
                                              </children>
                                           </VBox>
