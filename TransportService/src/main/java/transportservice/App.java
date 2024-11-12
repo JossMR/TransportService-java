@@ -19,6 +19,7 @@ public class App extends Application {
         stage.setScene(scene);
         stage.setResizable(false);
         stage.setTitle("Servicio de Transporte");
+        stage.setY(0);
         stage.show();
     }
 
